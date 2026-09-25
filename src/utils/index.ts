@@ -6,6 +6,22 @@ export const isEmpty = (value: string | undefined | null): value is undefined =>
 
 export const isNotEmpty = (value: string | undefined | null): value is string => value !== undefined && value !== null && value !== '';
 
+// Some flows return the answer as a raw JSON string (e.g. {"response":"..."}) instead of plain text.
+// Unwrap the "response" field in that case so the chat only renders the actual message.
+export const extractResponseText = (text: string): string => {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return text;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === 'object' && typeof parsed.response === 'string') {
+      return parsed.response;
+    }
+  } catch {
+    // not valid JSON, fall through and return original text
+  }
+  return text;
+};
+
 export const sendRequest = async <ResponseData>(
   params:
     | {

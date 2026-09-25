@@ -34,6 +34,7 @@ import { FilePreview } from '@/components/inputs/textInput/components/FilePrevie
 import { ChevronDownIcon, CircleDotIcon, SparklesIcon, TrashIcon } from './icons';
 import { CancelButton } from './buttons/CancelButton';
 import { cancelAudioRecording, startAudioRecording, stopAudioRecording } from '@/utils/audioRecording';
+import { extractResponseText } from '@/utils';
 import { LeadCaptureBubble } from '@/components/bubbles/LeadCaptureBubble';
 import {
   removeLocalStorageChatHistory,
@@ -1063,8 +1064,13 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
             isStreaming = false;
             finalizeThinking();
             setMessages((prev) => {
-              addChatMessage(prev);
-              return prev;
+              const lastMsg = prev[prev.length - 1];
+              const updated =
+                lastMsg && lastMsg.type === 'apiMessage' && lastMsg.message
+                  ? [...prev.slice(0, -1), { ...lastMsg, message: extractResponseText(lastMsg.message) }]
+                  : prev;
+              addChatMessage(updated);
+              return updated;
             });
             setLocalStorageChatflow(chatflowid, chatId);
             closeResponse();
@@ -1328,7 +1334,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
         const data = result.data;
 
         let text = '';
-        if (data.text) text = data.text;
+        if (data.text) text = extractResponseText(data.text);
         else if (data.json) text = JSON.stringify(data.json, null, 2);
         else text = JSON.stringify(data, null, 2);
 
